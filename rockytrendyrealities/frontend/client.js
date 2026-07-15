@@ -305,6 +305,10 @@
     myOrders: () => APIClient.get('/api/orders'),
     // Public runtime config (WhatsApp number, LiveChat license, social links)
     config: (opts) => APIClient.get('/api/config/public', opts),
+    // AI Design Studio — maps to main.py's POST /api/ai/generate-customization.
+    // Requires an authenticated customer (get_current_user) and returns { image_url }.
+    generateCustomization: (prompt, product_context) =>
+      APIClient.post('/api/ai/generate-customization', { prompt, product_context }, { retries: 0, timeout: 60000 }),
   };
 
   /* ==============================================================
@@ -1348,10 +1352,251 @@
   };
 
   /* ==============================================================
+     32b. BANNERS MODULE (dynamic hero + floating imagery)
+     Populates the homepage hero background/title/subtitle and any
+     active floating banner images from GET /api/banners. Falls back
+     silently to the static markup in index.html when the request
+     fails or returns no active banners.
+     ============================================================== */
+  const BannersModule = {
+    async init() {
+      const hero = $('#hero');
+      if (!hero) return; // only present on the home page
+      try {
+        const banners = await API.banners(true);
+        if (!Array.isArray(banners) || !banners.length) return; // keep static fallback
+        this.applyHero(banners);
+        this.applyFloating(banners);
+      } catch (err) {
+        Log.warn('BannersModule: keeping static hero fallback', err);
+      }
+      refreshIcons();
+    },
+
+    _src: (b) => b.optimized_url || b.image_url || '',
+
+    applyHero(banners) {
+      const heroes = banners
+        .filter((b) => (b.section_type || 'hero') === 'hero' && this._src(b))
+        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      const hero = heroes[0];
+      if (!hero) return;
+
+      const img = $('#hero-bg-img');
+      const src = this._src(hero);
+      if (img && src) { img.src = src; img.alt = hero.title || 'Featured collection'; }
+
+      // Apply copy only when the banner actually provides it, so any missing
+      // field keeps the designed static fallback rather than going blank.
+      const setText = (sel, val) => { const n = $(sel); if (n && val) n.textContent = val; };
+      setText('#hero-title', hero.title);
+      setText('#hero-subtitle', hero.subtitle);
+      setText('#hero-eyebrow', hero.eyebrow);
+
+      const cta = $('#hero-cta');
+      if (cta && hero.cta_label) cta.innerHTML = `<i data-lucide="shopping-bag"></i> ${escapeHTML(hero.cta_label)}`;
+      if (cta && hero.target_url && /^(https?:\/\/|\/)/.test(hero.target_url)) cta.setAttribute('href', hero.target_url);
+    },
+
+    applyFloating(banners) {
+      const wrap = $('#hero-floating');
+      if (!wrap) return;
+      const floats = banners
+        .filter((b) => b.section_type === 'floating' && this._src(b))
+        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+        .slice(0, 4);
+      if (!floats.length) return;
+      wrap.innerHTML = floats.map((b, i) => {
+        const src = this._src(b);
+        return `<img class="hero-float hero-float-${i + 1}" src="${escapeHTML(src)}" alt="${escapeHTML(b.title || '')}" loading="lazy" onerror="this.remove()">`;
+      }).join('');
+    },
+  };
+
+  /* ==============================================================
+     32c. AI DESIGN STUDIO MODULE
+     Ports the AI customizer UX: category selection → product picking →
+     chat-driven generation against POST /api/ai/generate-customization.
+     ============================================================== */
+  const AI_CATEGORIES = Object.freeze([
+    { value: 'sofa', label: 'Sofas & Seating' },
+    { value: 'table', label: 'Tables & Desks' },
+    { value: 'dining', label: 'Dining' },
+    { value: 'bedroom', label: 'Bedroom' },
+    { value: 'office', label: 'Office' },
+    { value: 'finish', label: 'Home Finishes' },
+    { value: 'decor', label: 'Decor & Accents' },
+  ]);
+
+  const AIModule = {
+    state: { category: null, product: null, busy: false },
+
+    async init() {
+      if (!$('#ai')) return; // only present on the home page
+      this.renderCategories();
+      this.bind();
+    },
+
+    renderCategories() {
+      const wrap = $('#ai-category-tabs');
+      if (!wrap) return;
+      wrap.innerHTML = AI_CATEGORIES.map((c, i) =>
+        `<button type="button" class="ai-cat-tab${i === 0 ? ' active' : ''}" role="tab" aria-selected="${i === 0}" data-cat="${escapeHTML(c.value)}">${escapeHTML(c.label)}</button>`
+      ).join('');
+      this.selectCategory(AI_CATEGORIES[0].value);
+    },
+
+    bind() {
+      on($('#ai-category-tabs'), 'click', (e) => {
+        const btn = e.target.closest('[data-cat]');
+        if (!btn) return;
+        $$('#ai-category-tabs .ai-cat-tab').forEach((x) => { x.classList.remove('active'); x.setAttribute('aria-selected', 'false'); });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        this.selectCategory(btn.dataset.cat);
+      });
+
+      on($('#ai-product-picker'), 'click', (e) => {
+        const card = e.target.closest('[data-ai-product]');
+        if (!card) return;
+        try { this.selectProduct(JSON.parse(card.dataset.aiProduct), card); }
+        catch (err) { Log.error('AI product parse', err); }
+      });
+
+      on($('#ai-form'), 'submit', (e) => { e.preventDefault(); this.generate(); });
+
+      // Enter submits; Shift+Enter for newline. Guard against CJK IME composition.
+      on($('#ai-prompt'), 'keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+          e.preventDefault();
+          this.generate();
+        }
+      });
+    },
+
+    async selectCategory(cat) {
+      this.state.category = cat;
+      const picker = $('#ai-product-picker');
+      if (!picker) return;
+      picker.innerHTML = Array.from({ length: 3 }).map(() => '<div class="skeleton skeleton-card"></div>').join('');
+      try {
+        const products = await API.products({ category: cat, limit: 12 });
+        picker.innerHTML = products.length
+          ? products.map((p) => this._pickCard(p)).join('')
+          : UI.empty('package', 'Nothing here yet', 'No products in this category right now.');
+      } catch (err) {
+        Log.error('AI category load', err);
+        picker.innerHTML = UI.empty('alert-triangle', 'Could not load products', err.message);
+      }
+      refreshIcons();
+    },
+
+    _pickCard(p) {
+      const img = p.optimized_url || p.image_url || '';
+      const payload = escapeHTML(JSON.stringify({ id: p.id, name: p.name, image_url: img }));
+      return `
+        <button type="button" class="ai-pick-card" data-ai-product="${payload}">
+          <img src="${escapeHTML(img)}" alt="${escapeHTML(p.name)}" loading="lazy" onerror="this.style.visibility='hidden'">
+          <span class="ai-pick-name">${escapeHTML(p.name)}</span>
+        </button>`;
+    },
+
+    selectProduct(data, card) {
+      this.state.product = data;
+      $$('#ai-product-picker .ai-pick-card').forEach((x) => x.classList.remove('selected'));
+      if (card) card.classList.add('selected');
+      const sel = $('#ai-selected-product');
+      if (sel) sel.innerHTML = `<i data-lucide="check-circle"></i><span>Customizing: <strong>${escapeHTML(data.name)}</strong></span>`;
+      refreshIcons();
+    },
+
+    async generate() {
+      if (this.state.busy) return;
+      const ta = $('#ai-prompt');
+      const prompt = sanitizeInput(ta && ta.value, 1000);
+      if (!prompt) { Notify.warning('Describe the customization you want first.'); return; }
+
+      if (!Auth.isAuthed()) {
+        Notify.warning('Please sign in to use the AI Design Studio.');
+        location.href = `${CONFIG.LOGIN_URL}?redirect=${encodeURIComponent(location.pathname)}`;
+        return;
+      }
+
+      const product_context = this.state.product
+        ? `Product: ${this.state.product.name} (ID ${this.state.product.id})`
+        : null;
+
+      this._addMessage('user', prompt);
+      if (ta) ta.value = '';
+      this._setBusy(true);
+      try {
+        const res = await API.generateCustomization(prompt, product_context);
+        const url = res && res.image_url;
+        if (url) {
+          this._renderResult(url, prompt);
+          this._addMessage('ai', 'Here is your custom render — tweak the prompt to explore more options.');
+        } else {
+          this._resetResult();
+          this._addMessage('ai', 'Sorry, no image came back. Please try again with a bit more detail.');
+        }
+      } catch (err) {
+        Log.error('AI generate', err);
+        this._resetResult();
+        this._addMessage('ai', err.message || 'Failed to generate customization.');
+        Notify.error(err.message || 'AI generation failed. Please try again.');
+      } finally {
+        this._setBusy(false);
+      }
+    },
+
+    _addMessage(role, text) {
+      const box = $('#ai-chat-messages');
+      if (!box) return;
+      const bubble = el('div', { class: `ai-msg ai-msg-${role}`, text });
+      box.appendChild(bubble);
+      box.scrollTop = box.scrollHeight;
+    },
+
+    _renderResult(url, caption) {
+      const box = $('#ai-result');
+      if (!box) return;
+      const safe = escapeHTML(url);
+      box.innerHTML = `
+        <figure class="ai-render">
+          <img src="${safe}" alt="AI customization preview${caption ? ': ' + escapeHTML(caption) : ''}" loading="lazy">
+          <figcaption><a href="${safe}" target="_blank" rel="noopener"><i data-lucide="external-link"></i> Open full size</a></figcaption>
+        </figure>`;
+      refreshIcons();
+    },
+
+    _resetResult() {
+      const box = $('#ai-result');
+      if (box && !$('.ai-render', box)) {
+        box.innerHTML = '<div class="ai-result-placeholder"><i data-lucide="sparkles"></i><p>Your custom render will appear here.</p></div>';
+        refreshIcons();
+      }
+    },
+
+    _setBusy(busy) {
+      this.state.busy = busy;
+      const btn = $('#ai-send');
+      if (btn) {
+        btn.disabled = busy;
+        btn.innerHTML = busy ? '<span class="spinner spinner-sm"></span> Generating…' : '<i data-lucide="sparkles"></i> Generate';
+      }
+      if (busy) {
+        const box = $('#ai-result');
+        if (box) box.innerHTML = '<div class="ai-result-placeholder"><span class="spinner"></span><p>Rendering your custom design…</p></div>';
+      }
+      refreshIcons();
+    },
+  };
+
+  /* ==============================================================
      33. BOOTSTRAP + INITIALIZATION
      ============================================================== */
   const PAGE_MODULES = {
-    home: [ProductsModule],
+    home: [ProductsModule, BannersModule, AIModule],
     products: [ProductsModule],
     product: [ProductDetail],
     cart: [],                 // Cart itself is core-initialized below (needed on every page for the badge)
