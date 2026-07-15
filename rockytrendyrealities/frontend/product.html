@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#120800" />
+  <meta name="description" content="Explore this handcrafted piece from Rocky Trendy Realities — premium materials, timeless design and secure checkout." />
+  <title>Product · Rocky Trendy Realities</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/client.css" />
+</head>
+<body data-page="product">
+  <div class="site-wrap">
+    <header class="site-header glass">
+      <div class="header-inner">
+        <a href="/index.html" class="brand" aria-label="Rocky Trendy Realities home">
+          <span class="brand-mark">RTR</span>
+          <span class="brand-name">Rocky Trendy Realities</span>
+        </a>
+        <nav class="main-nav" aria-label="Primary">
+          <a href="/index.html" class="nav-link" data-href="index.html">Home</a>
+          <a href="/index.html#catalog" class="nav-link">Shop</a>
+          <a href="/faq.html" class="nav-link" data-href="faq.html">FAQ</a>
+          <a href="/contact.html" class="nav-link" data-href="contact.html">Contact</a>
+        </nav>
+        <div class="header-actions">
+          <a href="/orders.html" class="header-icon-btn" data-auth-only aria-label="My orders" data-tip="My orders"><i data-lucide="package"></i></a>
+          <a href="/authentication.html" class="header-icon-btn" data-guest-only aria-label="Account" data-tip="Sign in"><i data-lucide="user"></i></a>
+          <button type="button" class="header-icon-btn" data-drawer-open="cart-drawer" aria-label="Open cart">
+            <i data-lucide="shopping-bag"></i><span class="cart-count" style="display:none">0</span>
+          </button>
+          <button type="button" class="mob-toggle" aria-label="Open menu"><i data-lucide="menu"></i></button>
+        </div>
+      </div>
+    </header>
+
+    <div class="mobile-nav-bg" id="mobile-nav-bg"></div>
+    <aside class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+      <div class="mobile-nav-head">
+        <span class="brand-name">Menu</span>
+        <button type="button" class="icon-btn" data-drawer-close="mobile-nav" aria-label="Close menu"><i data-lucide="x"></i></button>
+      </div>
+      <nav class="mobile-nav-body">
+        <a href="/index.html" class="mobile-nav-link" data-href="index.html">Home</a>
+        <a href="/index.html#catalog" class="mobile-nav-link">Shop</a>
+        <a href="/faq.html" class="mobile-nav-link" data-href="faq.html">FAQ</a>
+        <a href="/contact.html" class="mobile-nav-link" data-href="contact.html">Contact</a>
+        <a href="/orders.html" class="mobile-nav-link" data-href="orders.html" data-auth-only>My Orders</a>
+        <a href="/authentication.html" class="mobile-nav-link" data-href="authentication.html" data-guest-only>Sign In</a>
+        <a href="#" class="mobile-nav-link" data-logout data-auth-only>Log Out</a>
+      </nav>
+      <div class="mobile-nav-foot">Rocky Trendy Realities</div>
+    </aside>
+
+    <main class="main-content">
+      <section class="section" id="pdp-root">
+        <div class="container">
+          <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <a href="/index.html">Home</a>
+            <span class="sep">/</span>
+            <a href="/index.html#catalog">Shop</a>
+            <span class="sep">/</span>
+            <span class="current">Product</span>
+          </nav>
+
+          <div class="pdp-grid">
+            <!-- Gallery -->
+            <div>
+              <div class="pdp-gallery-main">
+                <img id="pdp-main-image" src="" alt="Product image" />
+              </div>
+              <div class="pdp-thumbs" id="pdp-thumbs"></div>
+            </div>
+
+            <!-- Info -->
+            <div class="pdp-info">
+              <div class="pdp-cat">Rocky Trendy Realities</div>
+              <h1 class="pdp-title" id="pdp-title">Loading…</h1>
+
+              <div class="pdp-price-row">
+                <span class="pdp-price" id="pdp-price"></span>
+              </div>
+
+              <div class="pdp-stock" id="pdp-stock"></div>
+
+              <p class="pdp-desc" id="pdp-desc"></p>
+
+              <div class="pdp-actions">
+                <div class="qty-stepper" aria-label="Quantity">
+                  <button type="button" onclick="var i=document.getElementById('pdp-qty');i.value=Math.max(1,(+i.value||1)-1)" aria-label="Decrease quantity">&minus;</button>
+                  <input type="number" id="pdp-qty" min="1" value="1" inputmode="numeric" aria-label="Quantity" />
+                  <button type="button" onclick="var i=document.getElementById('pdp-qty');i.value=Math.min(+i.max||999,(+i.value||1)+1)" aria-label="Increase quantity">+</button>
+                </div>
+                <button type="button" class="btn btn-primary btn-lg" id="pdp-add-to-cart">
+                  <i data-lucide="shopping-bag"></i> Add to cart
+                </button>
+              </div>
+
+              <a href="#" class="btn btn-whatsapp btn-block" id="pdp-whatsapp-enquire" target="_blank" rel="noopener">
+                <i data-lucide="message-circle"></i> Enquire on WhatsApp
+              </a>
+
+              <div class="pdp-meta-list mt-4">
+                <div class="row"><span>Delivery</span><span>White-glove, placed in your room</span></div>
+                <div class="row"><span>Guarantee</span><span>10-year structural promise</span></div>
+                <div class="row"><span>Returns</span><span>14-day inspection window</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-top">
+          <div>
+            <a href="/index.html" class="brand"><span class="brand-mark">RTR</span><span class="brand-name">Rocky Trendy Realities</span></a>
+            <p class="footer-brand-desc">Luxury handcrafted furniture for people who want their space to feel like a reality worth living in.</p>
+            <div class="footer-socials">
+              <a href="https://facebook.com" class="footer-social-btn" data-social="facebook" aria-label="Facebook"><i data-lucide="facebook"></i></a>
+              <a href="https://instagram.com" class="footer-social-btn" data-social="instagram" aria-label="Instagram"><i data-lucide="instagram"></i></a>
+            </div>
+          </div>
+          <div><h5 class="footer-heading">Shop</h5><div class="footer-links"><a href="/index.html#catalog">All products</a><a href="/index.html#featured">Featured</a><a href="/cart.html">Cart</a></div></div>
+          <div><h5 class="footer-heading">Help</h5><div class="footer-links"><a href="/faq.html">FAQ</a><a href="/contact.html">Contact us</a><a href="/orders.html">Track order</a></div></div>
+          <div><h5 class="footer-heading">Account</h5><div class="footer-links"><a href="/authentication.html?mode=login">Sign in</a><a href="/authentication.html?mode=register">Create account</a></div></div>
+        </div>
+        <div class="footer-bottom">
+          <span>&copy; <span id="year"></span> Rocky Trendy Realities. All rights reserved.</span>
+          <span>Secure payments by Paystack</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <div class="cart-bg" id="cart-drawer-bg"></div>
+  <aside class="cart-drawer glass" id="cart-drawer" aria-label="Shopping cart">
+    <div class="cart-drawer-head">
+      <h3 class="modal-title">Your cart</h3>
+      <button type="button" class="icon-btn" data-drawer-close="cart-drawer" aria-label="Close cart"><i data-lucide="x"></i></button>
+    </div>
+    <div class="cart-drawer-body" id="cart-drawer-body"></div>
+    <div class="cart-drawer-foot">
+      <div id="cart-drawer-summary" class="mb-2"></div>
+      <a href="/cart.html" class="btn btn-ghost btn-block mb-1">View cart</a>
+      <a href="/checkout.html" class="btn btn-primary btn-block">Checkout</a>
+    </div>
+  </aside>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>window.lucide && window.lucide.createIcons(); document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script src="/client.js"></script>
+</body>
+</html>
