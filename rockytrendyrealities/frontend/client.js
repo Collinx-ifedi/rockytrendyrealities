@@ -560,17 +560,28 @@
     persist() { Storage.set(CONFIG.CART_KEY, this.items); Store.set('cart', this.items); this.renderBadge(); EventBus.emit('cart:change', this.items); },
 
     add(product, quantity = 1) {
-      const existing = this.items.find((i) => i.product_id === product.id);
+      // Customized items never merge into a plain (non-customized) line for the
+      // same product, and two distinct custom renders of the same product stay
+      // separate too — only an exact re-add of the same render bumps quantity.
+      const isCustom = Boolean(product.is_customized);
+      const existing = this.items.find((i) =>
+        i.product_id === product.id &&
+        Boolean(i.is_customized) === isCustom &&
+        (!isCustom || i.custom_image_url === product.custom_image_url)
+      );
       if (existing) {
         existing.quantity = Math.min(existing.quantity + quantity, product.quantity ?? 999);
       } else {
         this.items.push({
           product_id: product.id,
           name: product.name,
-          image: product.optimized_url || product.image_url,
+          image: product.custom_image_url || product.optimized_url || product.image_url,
           price: product.price,
           quantity,
           max_quantity: product.quantity ?? 999,
+          is_customized: isCustom,
+          customization_notes: product.customization_notes || undefined,
+          custom_image_url: product.custom_image_url || undefined,
         });
       }
       this.persist();
@@ -1526,7 +1537,7 @@
 
     _pickCard(p) {
       const img = p.optimized_url || p.image_url || '';
-      const payload = escapeHTML(JSON.stringify({ id: p.id, name: p.name, image_url: img }));
+      const payload = escapeHTML(JSON.stringify({ id: p.id, name: p.name, image_url: img, price: p.price, quantity: p.quantity }));
       return `
         <button type="button" class="ai-pick-card" data-ai-product="${payload}">
           <img src="${escapeHTML(img)}" alt="${escapeHTML(p.name)}" loading="lazy" onerror="this.style.visibility='hidden'">
@@ -1601,10 +1612,27 @@
       const box = $('#ai-result');
       if (!box) return;
       const safe = escapeHTML(url);
+      const product = this.state.product || {};
+      // Mirrors CartItemSchema fields (product_id, quantity, is_customized,
+      // customization_notes, custom_image_url) so Checkout's payload mapping
+      // picks this line up correctly alongside ordinary cart items.
+      const cartPayload = escapeHTML(JSON.stringify({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url,
+        quantity: product.quantity,
+        is_customized: true,
+        custom_image_url: url,
+        customization_notes: caption || '',
+      }));
       box.innerHTML = `
         <figure class="ai-render">
           <img src="${safe}" alt="AI customization preview${caption ? ': ' + escapeHTML(caption) : ''}" loading="lazy">
           <figcaption><a href="${safe}" target="_blank" rel="noopener"><i data-lucide="external-link"></i> Open full size</a></figcaption>
+          <button type="button" class="btn btn-primary btn-sm ai-order-btn" data-add-to-cart="${cartPayload}">
+            <i data-lucide="shopping-bag"></i> Order Custom Design
+          </button>
         </figure>`;
       refreshIcons();
     },
