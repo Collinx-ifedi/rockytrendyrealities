@@ -256,7 +256,12 @@
             throw new APIError(res.status === 403 ? 'Forbidden' : 'Unauthorized', res.status);
           }
           const ct = res.headers.get('content-type') || '';
-          const payload = ct.includes('application/json') ? await res.json().catch(() => null) : await res.text();
+          let payload;
+          if (ct.includes('application/json')) {
+            try { payload = await res.json(); } catch { payload = null; }
+          } else {
+            payload = await res.text();
+          }
 
           if (!res.ok) {
             const detail = (payload && payload.detail) || (typeof payload === 'string' ? payload : `Request failed (${res.status})`);
@@ -929,7 +934,16 @@
           Notify.success(res.message || 'Account created. Check your email for a verification code.');
           location.href = `/authentication.html?mode=verify&email=${encodeURIComponent(email)}`;
         } catch (err) {
-          Notify.error(err.message || 'Registration failed.');
+          if (err.status === 400) {
+            // Duplicate email — including the race-condition path where two
+            // signups for the same address land concurrently and the backend
+            // resolves it as an IntegrityError on flush (see services.py's
+            // create_user_service). Surface the backend's message as-is and
+            // nudge the person toward signing in instead of retrying blindly.
+            Notify.error(err.message || 'An account with this email address already exists. Please log in instead.');
+          } else {
+            Notify.error(err.message || 'Registration failed. Please try again.');
+          }
         } finally {
           btn && (btn.disabled = false);
         }
@@ -987,24 +1001,26 @@
   /* ==============================================================
      26. CHECKOUT MODULE (Paystack + WhatsApp)
      --------------------------------------------------------------
-     IMPORTANT BACKEND NOTE: main.py's PaymentMethod enum only defines
-     PAYSTACK and WALLET — create_order_service() always forces the
-     order to PAYSTACK and always calls Paystack's initialize_transaction.
-     There is no server-side "WhatsApp order" concept today. So:
-       - Paystack path: creates a real Order row via POST /api/orders/checkout,
-         then redirects to Paystack's hosted checkout_url.
-       - WhatsApp path: does NOT call the backend (it would incorrectly
-         try to charge via Paystack). It builds a prefilled wa.me link
-         from the current cart and opens it — the order itself is only
-         confirmed once someone on the RTR WhatsApp line follows up.
-         If you want these to become real, trackable orders, the
-         backend needs a PaymentMethod.WHATSAPP option and a checkout
-         path that skips Paystack initialization.
+     Both payment methods now go through the same backend endpoint,
+     POST /api/orders/checkout (see services.py's create_order_service).
+     The request always includes payment_method, and the response
+     shape tells us which redirect to follow:
+       - payment_method: 'whatsapp' → server creates a real Order row,
+         decrements stock, and returns { whatsapp_redirect: true,
+         order_reference }. The frontend builds the prefilled wa.me
+         link client-side (the backend has no WhatsApp API access
+         itself) and opens it — the order is confirmed once someone
+         on the RTR WhatsApp line follows up.
+       - payment_method: 'paystack' → server initializes a Paystack
+         transaction and returns { authorization_url, reference, ... }.
+         The frontend redirects there for hosted checkout.
+     Both paths require an authenticated customer (the endpoint sits
+     behind get_current_user), so Auth.requireAuth() runs first either way.
      ============================================================== */
   const Checkout = {
     method: 'paystack',
 
-    buildWhatsAppLink({ note } = {}) {
+    buildWhatsAppLink({ note, orderReference } = {}) {
       const lines = [];
       if (note) {
         lines.push(note);
@@ -1022,6 +1038,7 @@
           if (address) lines.push(`Delivery address: ${address}`);
         }
       }
+      if (orderReference) lines.push(`Order Ref: ${orderReference}`);
       const text = encodeURIComponent(lines.join('\n'));
       return `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${text}`;
     },
@@ -1073,30 +1090,44 @@
         if (!Validate.phone(phone)) return Notify.error('Enter a valid phone number.');
         if (!Validate.required(address)) return Notify.error('Enter your delivery address.');
 
-        if (this.method === 'whatsapp') {
-          const link = this.buildWhatsAppLink();
-          window.open(link, '_blank', 'noopener');
-          Notify.info('We\u2019ve opened WhatsApp with your order — send the message to confirm.');
-          return;
-        }
-
-        // Paystack path — a real backend order.
+        // Both payment methods hit the same authenticated endpoint now.
         if (!Auth.requireAuth()) return;
 
-        const btn = form.querySelector('[type="submit"]');
+        const isWhatsApp = this.method === 'whatsapp';
+        const btn = form.querySelector(isWhatsApp ? '#checkout-pay-whatsapp' : '#checkout-pay-paystack') || form.querySelector('[type="submit"]');
         btn && (btn.disabled = true);
-        Loader.show('Setting up secure payment…');
+        Loader.show(isWhatsApp ? 'Placing your order…' : 'Setting up secure payment…');
         try {
+          // Mirrors CartItemSchema in models_schemas.py exactly — product_id,
+          // quantity, is_customized, customization_notes, custom_image_url —
+          // so the payload matches CheckoutRequest regardless of which of
+          // those optional fields a given cart item happens to carry.
           const payload = {
-            items: Cart.items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
+            items: Cart.items.map((i) => ({
+              product_id: i.product_id,
+              quantity: i.quantity,
+              is_customized: Boolean(i.is_customized),
+              customization_notes: i.customization_notes ? sanitizeInput(i.customization_notes, 2000) : undefined,
+              custom_image_url: i.custom_image_url || undefined,
+            })),
             customer_email: email,
             customer_phone: phone,
             shipping_address: address,
-            payment_method: 'paystack',
+            payment_method: isWhatsApp ? 'whatsapp' : 'paystack',
           };
           const res = await API.checkout(payload);
-          Cart.clear();
-          window.location.href = res.checkout_url;
+
+          if (res && res.whatsapp_redirect) {
+            const link = this.buildWhatsAppLink({ orderReference: res.order_reference });
+            Cart.clear();
+            window.open(link, '_blank', 'noopener');
+            Notify.success('Order placed — we\u2019ve opened WhatsApp so you can confirm it.');
+          } else if (res && res.authorization_url) {
+            Cart.clear();
+            window.location.href = res.authorization_url;
+          } else {
+            throw new Error('Checkout succeeded but no redirect target was returned.');
+          }
         } catch (err) {
           Notify.error(err.message || 'Checkout failed. Please try again.');
         } finally {
