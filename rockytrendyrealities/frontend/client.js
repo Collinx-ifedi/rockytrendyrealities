@@ -311,9 +311,11 @@
     // Public runtime config (WhatsApp number, LiveChat license, social links)
     config: (opts) => APIClient.get('/api/config/public', opts),
     // AI Design Studio — maps to main.py's POST /api/ai/generate-customization.
-    // Requires an authenticated customer (get_current_user) and returns { image_url }.
-    generateCustomization: (prompt, product_context) =>
-      APIClient.post('/api/ai/generate-customization', { prompt, product_context }, { retries: 0, timeout: 60000 }),
+    // Requires an authenticated customer (get_current_user). base_image_url is a
+    // required field server-side (Flux-2-Pro is image-to-image and has no default
+    // source image) — always pass the selected product's photo. Returns { image_url }.
+    generateCustomization: (prompt, base_image_url, product_context) =>
+      APIClient.post('/api/ai/generate-customization', { prompt, base_image_url, product_context }, { retries: 0, timeout: 60000 }),
   };
 
   /* ==============================================================
@@ -1547,21 +1549,28 @@
       const prompt = sanitizeInput(ta && ta.value, 1000);
       if (!prompt) { Notify.warning('Describe the customization you want first.'); return; }
 
+      // base_image_url is a required field server-side — the AI model transforms
+      // an existing product photo, it doesn't generate one from nothing — so a
+      // product must be selected before we can call the endpoint at all.
+      const baseImageUrl = this.state.product && this.state.product.image_url;
+      if (!baseImageUrl) {
+        Notify.warning('Please pick a product above before generating a customization.');
+        return;
+      }
+
       if (!Auth.isAuthed()) {
         Notify.warning('Please sign in to use the AI Design Studio.');
         location.href = `${CONFIG.LOGIN_URL}?redirect=${encodeURIComponent(location.pathname)}`;
         return;
       }
 
-      const product_context = this.state.product
-        ? `Product: ${this.state.product.name} (ID ${this.state.product.id})`
-        : null;
+      const product_context = `Product: ${this.state.product.name} (ID ${this.state.product.id})`;
 
       this._addMessage('user', prompt);
       if (ta) ta.value = '';
       this._setBusy(true);
       try {
-        const res = await API.generateCustomization(prompt, product_context);
+        const res = await API.generateCustomization(prompt, baseImageUrl, product_context);
         const url = res && res.image_url;
         if (url) {
           this._renderResult(url, prompt);
