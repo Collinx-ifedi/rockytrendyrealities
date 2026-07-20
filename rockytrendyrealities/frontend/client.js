@@ -582,6 +582,7 @@
         });
       }
       this.persist();
+      this.renderDrawer(); this.renderPage();
       Notify.success(`${product.name} added to cart.`);
     },
     updateQty(productId, quantity) {
@@ -596,7 +597,7 @@
       this.persist();
       this.renderDrawer(); this.renderPage();
     },
-    clear() { this.items = []; this.persist(); },
+    clear() { this.items = []; this.persist(); this.renderDrawer(); this.renderPage(); },
 
     count() { return this.items.reduce((n, i) => n + i.quantity, 0); },
     subtotal() { return this.items.reduce((s, i) => s + i.price * i.quantity, 0); },
