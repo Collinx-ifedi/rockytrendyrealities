@@ -1667,7 +1667,7 @@
     cart: [],                 // Cart itself is core-initialized below (needed on every page for the badge)
     checkout: [Checkout],
     orders: [OrdersModule],
-    authentication: [AuthModule],
+    authentication: [],
     faq: [FaqModule],
     contact: [ContactModule],
   };
