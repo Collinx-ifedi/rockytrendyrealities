@@ -2,7 +2,7 @@
    RTR STOREFRONT — client.js
    Rocky Trendy Realities · Vanilla JS Client Runtime (ES2022+)
    Single deployable file · no bundler · no framework
-   Pages: index.html · products.html · product.html · cart.html ·
+   Pages: index.html · products.html · product.html ·
           checkout.html · orders.html · authentication.html ·
           faq.html · contact.html
    Auto page detection via document.body.dataset.page
@@ -34,7 +34,7 @@
    24. Product Detail Module (PDP)
    25. Auth Module (login / register / OTP verify)
    26. Checkout Module (Paystack + WhatsApp)
-   27. Orders Module (customer order history + tracker)
+   27. Orders Module (customer order history)
    28. FAQ Module
    29. Contact Module
    30. Error Handling Module (global)
@@ -82,8 +82,8 @@
     // at runtime by IntegrationsModule.fetchConfig(). See main.py's
     // GET /api/config/public for the source of truth.
     LIVECHAT_LICENSE: '',
-    SOCIAL_FACEBOOK: '',
-    SOCIAL_INSTAGRAM: '',
+    SOCIAL_FACEBOOK: 'https://www.facebook.com/profile.php?id=61591459257810',
+    SOCIAL_INSTAGRAM: 'https://www.instagram.com/rockytrendyfurnitures?igsh=dGwzMzY4aHBqYmpy',
   };
 
   /* ==============================================================
@@ -94,9 +94,6 @@
     delivered: 'Delivered', cancelled: 'Cancelled', refunded: 'Refunded', failed: 'Failed',
   });
 
-  // Tracker only models the physical-fulfillment happy path;
-  // cancelled/refunded/failed orders are called out separately in the UI instead.
-  const TRACKER_STEPS = ['pending', 'paid', 'processing', 'shipped', 'delivered'];
 
   const HOMEPAGE_PRODUCT_LIMIT = 3;
 
@@ -1159,7 +1156,7 @@
   };
 
   /* ==============================================================
-     27. ORDERS MODULE (customer order history + tracker)
+     27. ORDERS MODULE (customer order history)
      ============================================================== */
   const OrdersModule = {
     orders: [],
@@ -1216,39 +1213,39 @@
       refreshIcons();
     },
 
+    _paymentLabel(method) {
+      const map = { paystack: 'Paystack', wallet: 'Wallet', whatsapp: 'WhatsApp' };
+      return map[method] || Fmt.titleCase(method || 'Not specified');
+    },
+
     _cardHTML(o) {
-      const thumbs = (o.items || []).slice(0, 4).map((i) => `<img src="${escapeHTML(i.product_image_snapshot || '')}" alt="${escapeHTML(i.product_name_snapshot || '')}">`).join('');
+      const items = o.items || [];
+      const thumbs = items.slice(0, 4).map((i) => `<img src="${escapeHTML(i.product_image_snapshot || '')}" alt="${escapeHTML(i.product_name_snapshot || 'Product image')}">`).join('');
+      const lines = items.map((i) => `
+        <div class="order-line">
+          <span class="order-line-name">${escapeHTML(i.product_name_snapshot || 'Item')}${i.is_customized ? ' <span class="badge sale">Custom</span>' : ''}</span>
+          <span class="order-line-qty">×${Number(i.quantity || 1)}</span>
+          <span class="order-line-price">${Fmt.money(i.unit_price_at_purchase)}</span>
+        </div>`).join('');
       return `
         <div class="order-card">
           <div class="order-card-head">
             <div>
               <div class="order-id">${escapeHTML(o.order_reference || `#${o.id}`)}</div>
-              <div class="order-date">${Fmt.date(o.created_at)}</div>
+              <div class="order-date">${Fmt.dateTime(o.created_at)}</div>
             </div>
             <span class="badge ${escapeHTML(o.status)}">${Fmt.orderStatus(o.status)}</span>
           </div>
-          <div class="order-items-preview">${thumbs}</div>
-          ${this._trackerHTML(o.status)}
+          ${thumbs ? `<div class="order-items-preview">${thumbs}</div>` : ''}
+          ${lines ? `<div class="order-lines mt-3">${lines}</div>` : ''}
+          <div class="order-meta mt-3">
+            <span class="order-meta-item"><i data-lucide="credit-card"></i> ${escapeHTML(this._paymentLabel(o.payment_method))}</span>
+            ${o.shipping_address ? `<span class="order-meta-item"><i data-lucide="map-pin"></i> ${escapeHTML(o.shipping_address)}</span>` : ''}
+          </div>
           <div class="order-card-foot mt-3">
-            <span class="fs-sm text-muted">${(o.items || []).length} item${(o.items || []).length === 1 ? '' : 's'}</span>
+            <span class="fs-sm text-muted">${items.length} item${items.length === 1 ? '' : 's'}</span>
             <span class="order-total">${Fmt.money(o.total_amount)}</span>
           </div>
-        </div>`;
-    },
-
-    _trackerHTML(status) {
-      if (!TRACKER_STEPS.includes(status)) {
-        return `<div class="alert alert-danger mt-2"><div><div class="alert-title">${Fmt.orderStatus(status)}</div><p>This order will not be fulfilled further. Contact us if you have questions.</p></div></div>`;
-      }
-      const currentIdx = TRACKER_STEPS.indexOf(status);
-      return `
-        <div class="order-tracker">
-          ${TRACKER_STEPS.map((step, i) => `
-            <div class="tracker-step ${i < currentIdx ? 'done' : ''} ${i === currentIdx ? 'current' : ''}">
-              <div class="tracker-line"></div>
-              <div class="dot">${i < currentIdx ? '<i data-lucide="check"></i>' : ''}</div>
-              <div class="label">${Fmt.orderStatus(step)}</div>
-            </div>`).join('')}
         </div>`;
     },
   };
@@ -1358,8 +1355,8 @@
         if (cfg && typeof cfg === 'object') {
           CONFIG.WHATSAPP_NUMBER = cfg.whatsapp_phone || CONFIG.WHATSAPP_NUMBER;
           CONFIG.LIVECHAT_LICENSE = cfg.livechat_license || '';
-          CONFIG.SOCIAL_FACEBOOK = cfg.social_facebook || '';
-          CONFIG.SOCIAL_INSTAGRAM = cfg.social_instagram || '';
+          CONFIG.SOCIAL_FACEBOOK = cfg.social_facebook || CONFIG.SOCIAL_FACEBOOK;
+          CONFIG.SOCIAL_INSTAGRAM = cfg.social_instagram || CONFIG.SOCIAL_INSTAGRAM;
         }
       } catch (err) {
         Log.warn('IntegrationsModule.fetchConfig: falling back to local defaults (offline or request failed)', err);

@@ -234,6 +234,7 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.2; color: var(--cream)
   font-family: var(--font-label); font-size: 1.05rem; letter-spacing: 0.02em; flex-shrink: 0;
 }
 .brand-name { font-family: var(--font-display); font-size: 1.15rem; letter-spacing: 0.01em; color: var(--cream); white-space: nowrap; }
+.brand-logo { width: 2.375rem; height: 2.375rem; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0; display: block; }
 
 .main-nav { display: flex; align-items: center; gap: 2rem; }
 .nav-link { font-size: 0.86rem; font-weight: 500; color: var(--sand); position: relative; padding: 0.3rem 0; }
@@ -633,17 +634,6 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.2; color: var(--cream)
 .order-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
 .order-total { font-family: var(--font-label); font-size: 1.1rem; color: var(--caramel); }
 
-.order-tracker { display: flex; align-items: center; margin: 2rem 0; }
-.tracker-step { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; }
-.tracker-step .dot { width: 2rem; height: 2rem; border-radius: 50%; background: var(--surface-2); border: 2px solid var(--border-mid); display: grid; place-items: center; color: var(--brown); z-index: 1; }
-.tracker-step .dot svg { width: 0.9375rem; height: 0.9375rem; }
-.tracker-step.done .dot { background: var(--success); border-color: var(--success); color: var(--dark); }
-.tracker-step.current .dot { background: var(--caramel); border-color: var(--caramel); color: var(--dark); }
-.tracker-step .label { font-size: 0.72rem; color: var(--brown); margin-top: 0.6rem; }
-.tracker-step.done .label, .tracker-step.current .label { color: var(--sand); }
-.tracker-line { position: absolute; top: 1rem; left: 50%; width: 100%; height: 2px; background: var(--border-mid); z-index: 0; }
-.tracker-step.done .tracker-line { background: var(--success); }
-.tracker-step:last-child .tracker-line { display: none; }
 
 /* ================================================================
    16. AUTH (LOGIN / REGISTER)
@@ -659,6 +649,7 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; line-height: 1.2; color: var(--cream)
 }
 .auth-brand { text-align: center; margin-bottom: 2rem; }
 .auth-brand .brand-mark { width: 3.25rem; height: 3.25rem; font-size: 1.2rem; margin: 0 auto 0.85rem; }
+.auth-brand .brand-logo { width: 3.25rem; height: 3.25rem; margin: 0 auto 0.85rem; }
 .auth-title { font-family: var(--font-display); font-size: 1.5rem; color: var(--cream); }
 .auth-sub { font-size: 0.82rem; color: var(--brown); margin-top: 0.35rem; }
 .auth-divider { display: flex; align-items: center; gap: 0.75rem; margin: 1.5rem 0; font-size: 0.75rem; color: var(--brown); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -840,3 +831,13 @@ button:disabled:active, .btn:disabled:active { transform: none; }
 ::-webkit-scrollbar-track { background: var(--dark); }
 ::-webkit-scrollbar-thumb { background: var(--brown); border-radius: var(--radius-pill); border: 2px solid var(--dark); }
 ::-webkit-scrollbar-thumb:hover { background: var(--caramel); }
+
+/* Order detail rows on the My Orders page (order history — no shipment tracking) */
+.order-lines { display: flex; flex-direction: column; gap: 0.5rem; }
+.order-line { display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; }
+.order-line-name { flex: 1 1 auto; color: var(--sand); }
+.order-line-qty { color: var(--brown); font-variant-numeric: tabular-nums; }
+.order-line-price { color: var(--cream); font-family: var(--font-label); font-variant-numeric: tabular-nums; }
+.order-meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--border-soft); }
+.order-meta-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--brown); }
+.order-meta-item svg { width: 0.95rem; height: 0.95rem; color: var(--caramel); }

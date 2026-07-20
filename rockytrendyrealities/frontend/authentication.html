@@ -10,20 +10,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/client.css" />
+  <link rel="stylesheet" href="client.css" />
 </head>
 <body data-page="authentication">
   <div class="site-wrap">
     <header class="site-header glass">
       <div class="header-inner">
-        <a href="/index.html" class="brand" aria-label="Rocky Trendy Realities home">
-          <span class="brand-mark">RTR</span><span class="brand-name">Rocky Trendy Realities</span>
+        <a href="index.html" class="brand" aria-label="Rocky Trendy Realities home">
+          <img src="logo.jpg" class="brand-logo" alt="Rocky Trendy Realities logo" width="40" height="40" /><span class="brand-name">Rocky Trendy Realities</span>
         </a>
         <nav class="main-nav" aria-label="Primary">
-          <a href="/index.html" class="nav-link" data-href="index.html">Home</a>
-          <a href="/index.html#catalog" class="nav-link">Shop</a>
-          <a href="/faq.html" class="nav-link" data-href="faq.html">FAQ</a>
-          <a href="/contact.html" class="nav-link" data-href="contact.html">Contact</a>
+          <a href="index.html" class="nav-link" data-href="index.html">Home</a>
+          <a href="index.html#catalog" class="nav-link">Shop</a>
+          <a href="faq.html" class="nav-link" data-href="faq.html">FAQ</a>
+          <a href="contact.html" class="nav-link" data-href="contact.html">Contact</a>
         </nav>
         <div class="header-actions">
           <button type="button" class="header-icon-btn" data-drawer-open="cart-drawer" aria-label="Open cart">
@@ -41,10 +41,10 @@
         <button type="button" class="icon-btn" data-drawer-close="mobile-nav" aria-label="Close menu"><i data-lucide="x"></i></button>
       </div>
       <nav class="mobile-nav-body">
-        <a href="/index.html" class="mobile-nav-link" data-href="index.html">Home</a>
-        <a href="/index.html#catalog" class="mobile-nav-link">Shop</a>
-        <a href="/faq.html" class="mobile-nav-link" data-href="faq.html">FAQ</a>
-        <a href="/contact.html" class="mobile-nav-link" data-href="contact.html">Contact</a>
+        <a href="index.html" class="mobile-nav-link" data-href="index.html">Home</a>
+        <a href="index.html#catalog" class="mobile-nav-link">Shop</a>
+        <a href="faq.html" class="mobile-nav-link" data-href="faq.html">FAQ</a>
+        <a href="contact.html" class="mobile-nav-link" data-href="contact.html">Contact</a>
       </nav>
       <div class="mobile-nav-foot">Rocky Trendy Realities</div>
     </aside>
@@ -54,7 +54,7 @@
         <!-- LOGIN -->
         <div class="auth-card" data-auth-panel="login" hidden>
           <div class="auth-brand">
-            <span class="brand-mark">RTR</span>
+            <img src="logo.jpg" class="brand-logo" alt="Rocky Trendy Realities logo" width="40" height="40" />
             <h1 class="auth-title">Welcome back</h1>
             <p class="auth-sub">Sign in to track orders and check out faster.</p>
           </div>
@@ -69,13 +69,13 @@
             </div>
             <button type="submit" class="btn btn-primary btn-block btn-lg">Sign in</button>
           </form>
-          <div class="auth-foot">New here? <a href="/authentication.html?mode=register" data-auth-switch="register">Create an account</a></div>
+          <div class="auth-foot">New here? <a href="authentication.html?mode=register" data-auth-switch="register">Create an account</a></div>
         </div>
 
         <!-- REGISTER -->
         <div class="auth-card" data-auth-panel="register" hidden>
           <div class="auth-brand">
-            <span class="brand-mark">RTR</span>
+            <img src="logo.jpg" class="brand-logo" alt="Rocky Trendy Realities logo" width="40" height="40" />
             <h1 class="auth-title">Create your account</h1>
             <p class="auth-sub">Join Rocky Trendy Realities in under a minute.</p>
           </div>
@@ -99,13 +99,13 @@
             </div>
             <button type="submit" class="btn btn-primary btn-block btn-lg">Create account</button>
           </form>
-          <div class="auth-foot">Already have an account? <a href="/authentication.html?mode=login" data-auth-switch="login">Sign in</a></div>
+          <div class="auth-foot">Already have an account? <a href="authentication.html?mode=login" data-auth-switch="login">Sign in</a></div>
         </div>
 
         <!-- VERIFY -->
         <div class="auth-card" data-auth-panel="verify" hidden>
           <div class="auth-brand">
-            <span class="brand-mark">RTR</span>
+            <img src="logo.jpg" class="brand-logo" alt="Rocky Trendy Realities logo" width="40" height="40" />
             <h1 class="auth-title">Verify your email</h1>
             <p class="auth-sub">Enter the code we emailed you to activate your account.</p>
           </div>
@@ -122,7 +122,7 @@
           </form>
           <div class="auth-divider">or</div>
           <button type="button" class="btn btn-ghost btn-block" data-resend-otp>Resend code</button>
-          <div class="auth-foot"><a href="/authentication.html?mode=login" data-auth-switch="login">Back to sign in</a></div>
+          <div class="auth-foot"><a href="authentication.html?mode=login" data-auth-switch="login">Back to sign in</a></div>
         </div>
       </div>
     </main>
@@ -146,8 +146,8 @@
     <div class="cart-drawer-body" id="cart-drawer-body"></div>
     <div class="cart-drawer-foot">
       <div id="cart-drawer-summary" class="mb-2"></div>
-      <a href="/cart.html" class="btn btn-ghost btn-block mb-1">View cart</a>
-      <a href="/checkout.html" class="btn btn-primary btn-block">Checkout</a>
+      <a href="checkout.html" class="btn btn-ghost btn-block mb-1">View cart</a>
+      <a href="checkout.html" class="btn btn-primary btn-block">Checkout</a>
     </div>
   </aside>
 
@@ -171,6 +171,6 @@
       document.getElementById('year').textContent = new Date().getFullYear();
     })();
   </script>
-  <script src="/client.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>

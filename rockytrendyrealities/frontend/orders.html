@@ -4,15 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#120800" />
-  <meta name="description" content="Answers to common questions about Rocky Trendy Realities — delivery, payment, returns and our craftsmanship guarantee." />
-  <title>FAQ · Rocky Trendy Realities</title>
+  <meta name="description" content="Review your Rocky Trendy Realities order history — order references, dates, payment methods, fulfilment status and the items in every order." />
+  <meta name="robots" content="noindex" />
+  <title>My Orders · Rocky Trendy Realities</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="client.css" />
 </head>
-<body data-page="faq">
+<body data-page="orders">
   <div class="site-wrap">
     <header class="site-header glass">
       <div class="header-inner">
@@ -26,7 +27,7 @@
           <a href="contact.html" class="nav-link" data-href="contact.html">Contact</a>
         </nav>
         <div class="header-actions">
-          <a href="orders.html" class="header-icon-btn" data-auth-only aria-label="My orders" data-tip="My orders"><i data-lucide="package"></i></a>
+          <a href="orders.html" class="header-icon-btn active" data-auth-only aria-label="My orders" data-tip="My orders"><i data-lucide="package"></i></a>
           <a href="authentication.html" class="header-icon-btn" data-guest-only aria-label="Account" data-tip="Sign in"><i data-lucide="user"></i></a>
           <button type="button" class="header-icon-btn" data-drawer-open="cart-drawer" aria-label="Open cart">
             <i data-lucide="shopping-bag"></i><span class="cart-count" style="display:none">0</span>
@@ -58,42 +59,27 @@
       <section class="section">
         <div class="container">
           <nav class="breadcrumbs" aria-label="Breadcrumb">
-            <a href="index.html">Home</a><span class="sep">/</span><span class="current">FAQ</span>
+            <a href="index.html">Home</a><span class="sep">/</span><span class="current">My Orders</span>
           </nav>
           <div class="section-head">
             <div>
-              <span class="eyebrow">Good to know</span>
-              <h1 class="page-heading">Frequently asked questions</h1>
-              <p class="section-sub">Everything about ordering, delivery and our craftsmanship promise. Can&apos;t find your answer? <a href="contact.html" class="text-caramel">Contact us</a>.</p>
+              <span class="eyebrow">Your account</span>
+              <h1 class="page-heading">My orders</h1>
+              <p class="section-sub">Every order you&apos;ve placed with Rocky Trendy Realities, with references, dates, payment methods, fulfilment status and the pieces in each order.</p>
             </div>
           </div>
 
-          <div class="faq-list">
-            <div class="accordion-item">
-              <button type="button" class="accordion-head">How long does delivery take?<i data-lucide="chevron-down"></i></button>
-              <div class="accordion-panel"><div class="accordion-inner">Most in-stock pieces ship within 2&ndash;5 business days. Made-to-order items take longer and the estimated lead time is shown on each product page. We&apos;ll keep you updated at every step.</div></div>
-            </div>
-            <div class="accordion-item">
-              <button type="button" class="accordion-head">Which payment methods do you accept?<i data-lucide="chevron-down"></i></button>
-              <div class="accordion-panel"><div class="accordion-inner">We accept secure card and bank-transfer payments through Paystack at checkout. Prefer a personal touch? You can also arrange your order over WhatsApp and pay however suits you.</div></div>
-            </div>
-            <div class="accordion-item">
-              <button type="button" class="accordion-head">Do you offer a warranty?<i data-lucide="chevron-down"></i></button>
-              <div class="accordion-panel"><div class="accordion-inner">Yes. Every solid-wood frame is backed by our 10-year structural guarantee. If anything fails under normal use within that window, we&apos;ll repair or replace it.</div></div>
-            </div>
-            <div class="accordion-item">
-              <button type="button" class="accordion-head">Can I return an item?<i data-lucide="chevron-down"></i></button>
-              <div class="accordion-panel"><div class="accordion-inner">You have a 14-day inspection window from delivery. If a piece isn&apos;t right, reach out and we&apos;ll arrange a return or exchange for items in their original condition.</div></div>
-            </div>
-            <div class="accordion-item">
-              <button type="button" class="accordion-head">Do you deliver nationwide?<i data-lucide="chevron-down"></i></button>
-              <div class="accordion-panel"><div class="accordion-inner">We deliver to most locations nationwide with white-glove service&mdash;we unpack and place each piece in your room. Enter your address at checkout to confirm coverage and timing.</div></div>
-            </div>
-            <div class="accordion-item">
-              <button type="button" class="accordion-head">How do I check my order history?<i data-lucide="chevron-down"></i></button>
-              <div class="accordion-panel"><div class="accordion-inner">Create an account and check out with Paystack to see your full order history and fulfilment status under <a href="orders.html" class="text-caramel">My Orders</a>. WhatsApp orders are confirmed directly by our team.</div></div>
-            </div>
+          <div class="orders-filter-tabs" role="tablist" aria-label="Filter orders by status">
+            <button type="button" class="ftab on" data-status="all">All</button>
+            <button type="button" class="ftab" data-status="pending">In progress</button>
+            <button type="button" class="ftab" data-status="fulfilled">Fulfilled</button>
+            <button type="button" class="ftab" data-status="cancelled">Cancelled</button>
           </div>
+
+          <!-- OrdersModule (client.js §27) renders the authenticated customer's
+               order history here from GET /api/orders. Auth is enforced client-side
+               via Auth.requireAuth() and server-side via the Bearer token header. -->
+          <div id="orders-list" aria-live="polite"></div>
         </div>
       </section>
     </main>
