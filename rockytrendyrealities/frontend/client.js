@@ -305,6 +305,9 @@
     // Orders & checkout
     checkout: (payload) => APIClient.post('/api/orders/checkout', payload, { retries: 0 }),
     myOrders: () => APIClient.get('/api/orders'),
+    // Reconciles order status against Paystack after the customer returns from
+    // checkout (success, failure, or cancel) — see main.py's GET /api/orders/verify-callback.
+    verifyPayment: (reference) => APIClient.get(`/api/orders/verify-callback?reference=${encodeURIComponent(reference)}`, { retries: 0 }),
     // Public runtime config (WhatsApp number, LiveChat license, social links)
     config: (opts) => APIClient.get('/api/config/public', opts),
     // AI Design Studio — maps to main.py's POST /api/ai/generate-customization.
@@ -1169,7 +1172,29 @@
       if (!Auth.requireAuth()) return;
 
       this._bindFilters();
+      await this.reconcilePaystackReturn();
       await this.load();
+    },
+
+    // Paystack redirects the customer here (?reference=&trxref=) after checkout,
+    // whether they paid, failed, or cancelled. Reconcile before rendering so the
+    // order they just acted on shows its real status immediately, not "Pending".
+    async reconcilePaystackReturn() {
+      const reference = qsGet('reference') || qsGet('trxref');
+      if (!reference) return;
+      try {
+        const result = await API.verifyPayment(reference);
+        if (result.status === 'paid') Notify.success(`Payment confirmed for order ${result.order_reference}.`);
+        else if (result.status === 'failed') Notify.warning(`Payment for order ${result.order_reference} didn't go through.`);
+      } catch (err) {
+        Log.warn('payment verify', err.message);
+      } finally {
+        // Strip the reference so refreshing this page doesn't re-trigger it.
+        const url = new URL(location.href);
+        url.searchParams.delete('reference');
+        url.searchParams.delete('trxref');
+        history.replaceState({}, '', url);
+      }
     },
 
     async load() {
